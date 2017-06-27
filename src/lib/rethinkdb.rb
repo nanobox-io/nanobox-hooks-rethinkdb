@@ -1,7 +1,7 @@
 module Hooky
   module Rethinkdb
 
-  	  CONFIG_DEFAULTS = {
+      CONFIG_DEFAULTS = {
       # global settings
       before_deploy:                 {type: :array, of: :string, default: []},
       after_deploy:                  {type: :array, of: :string, default: []},
