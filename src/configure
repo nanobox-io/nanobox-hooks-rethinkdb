@@ -99,7 +99,7 @@ if ['default', 'primary', 'secondary'].include? payload[:member][:role]
   template '/data/etc/rethinkdb/rethinkdb.conf' do
     mode 0755
     source 'rethinkdb.conf.erb'
-    variables ({ config: config, maxmemory: maxmemory, servername: "#{payload[:component][:uid]}_#{payload[:member][:uid]}" })
+    variables ({ config: config, maxmemory: maxmemory, servername: "#{payload[:component][:uid]}_#{payload[:member][:uid]}".gsub(/\./, '_') })
   end
 
   if payload[:logvac_host]
