@@ -1,41 +1,10 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env bash
 
-# hookit is installed as a bundled app, so we need bundler to load it for us
-$:.unshift  '/opt/gonano/hookit/vendor/bundle'
-require 'bundler/setup'
+exec >&2 6>&1
 
-# load hookit/setup to bootstrap hookit and import the dsl
-require 'hookit/setup'
+mkdir -p /var/tmp/rethinkdb-dump
+chown gonano:gonano -R /var/tmp/rethinkdb-dump
 
-directory '/var/tmp/rethinkdb-dump' do
-  recursive true
-  owner "gonano"
-  group "gonano"
-end
+/data/bin/rethinkdb dump -f - --temp-dir /var/tmp/rethinkdb-dump >&6
 
-execute "dump database" do
-  command "/data/bin/rethinkdb dump -f /var/tmp/rethinkdb.tar.gz --temp-dir /var/tmp/rethinkdb-dump"
-  user "gonano"
-end
-
-local_sum = `md5sum /var/tmp/rethinkdb.tar.gz`.to_s.strip.split(' ').first
-
-execute "send backup to server" do
-  command "scp -o StrictHostKeyChecking=no /var/tmp/rethinkdb.tar.gz #{payload[:warehouse][:host]}:/data/var/db/rethinkdb/#{payload[:warehouse][:backup_id]}.tar.gz"
-end
-
-file "/var/tmp/rethinkdb.tar.gz" do
-  action :delete
-end
-
-directory '/var/tmp/rethinkdb-dump' do
-  action :delete
-end
-
-remote_sum = `ssh -o StrictHostKeyChecking=no #{payload[:warehouse][:host]} "md5sum /data/var/db/rethinkdb/#{payload[:warehouse][:backup_id]}.tar.gz"`.to_s.strip.split(' ').first
-
-# Ensure checksum match
-if remote_sum != local_sum
-  puts 'checksum mismatch'
-  exit 1
-end
+rm -rf /var/tmp/rethinkdb-dump
